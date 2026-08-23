@@ -1,15 +1,57 @@
 import 'package:flutter/material.dart';
 
 import '../models/product.dart';
+import '../services/cart_service.dart';
 
-class ProductDetailsScreen extends StatelessWidget {
+class ProductDetailsScreen extends StatefulWidget {
   const ProductDetailsScreen({required this.product, super.key});
 
   final Product product;
 
   @override
+  State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
+}
+
+class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
+  static const int _userId = 5;
+  final CartService _cartService = CartService();
+  bool _isAddingToCart = false;
+
+  @override
+  void dispose() {
+    _cartService.close();
+    super.dispose();
+  }
+
+  // Lab Activity 3 - Enhancement 3: Send this product's values to /carts/add.
+  Future<void> _addToCart() async {
+    if (_isAddingToCart) return;
+    setState(() => _isAddingToCart = true);
+
+    try {
+      await _cartService.addToCart(
+        userId: _userId,
+        productId: widget.product.id,
+        quantity: 1,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${widget.product.title} was sent to the cart.')),
+      );
+    } on Object catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _isAddingToCart = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
+    final Product product = widget.product;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Product details')),
@@ -69,6 +111,22 @@ class ProductDetailsScreen extends StatelessWidget {
                 Text(
                   product.description,
                   style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _isAddingToCart ? null : _addToCart,
+                    icon: _isAddingToCart
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.add_shopping_cart_rounded),
+                    label: Text(
+                      _isAddingToCart ? 'Adding...' : 'Add to cart',
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Wrap(

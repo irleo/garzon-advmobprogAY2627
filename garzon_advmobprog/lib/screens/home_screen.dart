@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'cart_screen.dart';
 import 'product_screen.dart';
 import 'settings_screen.dart';
 
@@ -17,11 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const List<Widget> _pages = <Widget>[
     ProductScreen(),
-    _PlaceholderPage(
-      icon: Icons.chat_bubble_outline_rounded,
-      title: 'Chat',
-      message: 'Your product conversations will appear here.',
-    ),
+    CartScreen(),
     _PlaceholderPage(
       icon: Icons.person_outline_rounded,
       title: 'Profile',
@@ -31,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> titles = <String>['Discover', 'Chat', 'Profile'];
+    final List<String> titles = <String>['Discover', 'Cart', 'Profile'];
 
     return Scaffold(
       appBar: AppBar(
@@ -45,7 +42,20 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: IndexedStack(index: _selectedIndex, children: _pages),
+      body: HeroMode(
+        enabled: _selectedIndex == 0,
+        child: IndexedStack(index: _selectedIndex, children: _pages),
+      ),
+      // Lab Activity 3 - Enhancement 2: Chat is a FAB and is hidden on Cart.
+      floatingActionButton: _selectedIndex == 1
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const _ChatScreen()),
+              ),
+              icon: const Icon(Icons.chat_bubble_outline_rounded),
+              label: const Text('Chat'),
+            ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (int index) =>
@@ -57,9 +67,9 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Shop',
           ),
           NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline_rounded),
-            selectedIcon: Icon(Icons.chat_bubble_rounded),
-            label: 'Chat',
+            icon: Icon(Icons.shopping_cart_outlined),
+            selectedIcon: Icon(Icons.shopping_cart_rounded),
+            label: 'Cart',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline_rounded),
@@ -67,6 +77,22 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Profile',
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ChatScreen extends StatelessWidget {
+  const _ChatScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Chat')),
+      body: const _PlaceholderPage(
+        icon: Icons.chat_bubble_outline_rounded,
+        title: 'Chat',
+        message: 'Your product conversations will appear here.',
       ),
     );
   }
