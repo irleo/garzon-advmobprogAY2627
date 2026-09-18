@@ -5,8 +5,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/theme_provider.dart';
+import 'models/user.dart';
+import 'services/user_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/signin_screen.dart';
+import 'screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,8 +38,14 @@ class GarzonAdvMobProg extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<ThemeProvider>(
-      create: (_) => ThemeProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
+        Provider<UserService>(
+          create: (_) => UserService(),
+          dispose: (_, UserService service) => service.close(),
+        ),
+      ],
       child: ScreenUtilInit(
         designSize: const Size(412, 915),
         minTextAdapt: true,
@@ -45,13 +55,20 @@ class GarzonAdvMobProg extends StatelessWidget {
 
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'Product Explorer',
+            title: 'NU Exchange',
             theme: themeProvider.lightTheme,
             darkTheme: themeProvider.darkTheme,
             themeMode: themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
-            initialRoute: HomeScreen.routeName,
+            initialRoute: SplashScreen.routeName,
             routes: <String, WidgetBuilder>{
-              HomeScreen.routeName: (_) => const HomeScreen(),
+              SplashScreen.routeName: (_) => const SplashScreen(),
+              SignInScreen.routeName: (_) => const SignInScreen(),
+              HomeScreen.routeName: (BuildContext context) {
+                final Object? user = ModalRoute.of(context)?.settings.arguments;
+                return user is User
+                    ? HomeScreen(user: user)
+                    : const SplashScreen();
+              },
               SettingsScreen.routeName: (_) => const SettingsScreen(),
             },
           );

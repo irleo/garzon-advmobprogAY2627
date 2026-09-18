@@ -1,5 +1,5 @@
 name: garzon_advmobprog
-description: "Lab Activity 2 - Product API application."
+description: "Lab Activity 4 - Persistent authentication and user carts."
 publish_to: none
 version: 1.0.0+1
 
@@ -13,6 +13,8 @@ dependencies:
   flutter_screenutil: ^5.9.3
   http: ^1.5.0
   provider: ^6.1.5
+  intl: ^0.20.2
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
@@ -23,3 +25,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/.env
+    - assets/images/nuicon.jpeg

@@ -17,6 +17,11 @@ class Cart {
   final int totalProducts;
   final int totalQuantity;
 
+  double get discount {
+    final double discountAmount = total - discountedTotal;
+    return discountAmount > 0 ? discountAmount : 0;
+  }
+
   factory Cart.fromJson(Map<String, dynamic> json) {
     return Cart(
       id: _asInt(json['id']),
@@ -34,7 +39,9 @@ class Cart {
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'id': id,
-    'products': products.map((CartProduct product) => product.toJson()).toList(),
+    'products': products
+        .map((CartProduct product) => product.toJson())
+        .toList(),
     'total': total,
     'discountedTotal': discountedTotal,
     'userId': userId,
@@ -76,6 +83,21 @@ class CartProduct {
         json['discountedTotal'] ?? json['discountedPrice'],
       ),
       thumbnail: _asString(json['thumbnail']),
+    );
+  }
+
+  CartProduct copyWith({int? quantity}) {
+    final int nextQuantity = quantity ?? this.quantity;
+    final double nextTotal = price * nextQuantity;
+    return CartProduct(
+      id: id,
+      title: title,
+      price: price,
+      quantity: nextQuantity,
+      total: nextTotal,
+      discountPercentage: discountPercentage,
+      discountedTotal: nextTotal * (1 - (discountPercentage / 100)),
+      thumbnail: thumbnail,
     );
   }
 

@@ -11,28 +11,60 @@ class CartService {
 
   final http.Client _client;
 
-  // Lab Activity 3 - Enhancement 3: Load only the cart owned by one user ID.
+  // Lab Activity 4 - Enhancement 3: Select the first cart owned by the saved user.
   Future<Cart> getCartByUserId(int userId) async {
     if (userId <= 0) {
-      throw const CartServiceException('The user ID must be greater than zero.');
+      throw const CartServiceException('A signed-in user is required.');
+    }
+    final Map<String, dynamic> data = await _send(
+      () => _client.get(Uri.parse('$apiHost/carts/user/$userId?limit=1')),
+    );
+    final Object? carts = data['carts'];
+    if (carts is! List<dynamic>) {
+      throw const CartServiceException(
+        'The server returned an invalid cart list.',
+      );
+    }
+    if (carts.isEmpty) {
+      // ID zero represents a local cart until the demo API simulates creation.
+      return Cart(
+        id: 0,
+        products: const <CartProduct>[],
+        total: 0,
+        discountedTotal: 0,
+        userId: userId,
+        totalProducts: 0,
+        totalQuantity: 0,
+      );
+    }
+    final Object? first = carts.first;
+    if (first is! Map<String, dynamic>) {
+      throw const CartServiceException('The server returned an invalid cart.');
+    }
+    final Cart cart = Cart.fromJson(first);
+    if (cart.userId != userId || cart.id <= 0) {
+      throw const CartServiceException(
+        'The cart does not belong to this user.',
+      );
+    }
+    return cart;
+  }
+
+  // Lab Activity 3 - Enhancement 3: Load one cart by its cart ID.
+  Future<Cart> getCartById(int cartId) async {
+    if (cartId <= 0) {
+      throw const CartServiceException(
+        'The cart ID must be greater than zero.',
+      );
     }
 
     final Map<String, dynamic> data = await _send(
       () => _client.get(
-        Uri.parse('$apiHost/carts/user/$userId'),
+        Uri.parse('$apiHost/carts/$cartId'),
         headers: const <String, String>{'Accept': 'application/json'},
       ),
     );
-    final Object? rawCarts = data['carts'];
-    if (rawCarts is! List<dynamic> || rawCarts.isEmpty) {
-      throw CartServiceException('No cart was found for user $userId.');
-    }
-
-    final Object? firstCart = rawCarts.first;
-    if (firstCart is! Map<String, dynamic>) {
-      throw const CartServiceException('The cart response has an invalid format.');
-    }
-    return Cart.fromJson(firstCart);
+    return Cart.fromJson(data);
   }
 
   // Lab Activity 3 - Enhancement 3: Pass product values to POST /carts/add.
@@ -63,6 +95,38 @@ class CartService {
       ),
     );
     return Cart.fromJson(data);
+  }
+
+  Future<void> replaceCartProducts({
+    required int cartId,
+    required List<CartProduct> products,
+  }) async {
+    if (cartId <= 0) {
+      throw const CartServiceException(
+        'The cart ID must be greater than zero.',
+      );
+    }
+
+    await _send(
+      () => _client.patch(
+        Uri.parse('$apiHost/carts/$cartId'),
+        headers: const <String, String>{
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'merge': false,
+          'products': products
+              .map(
+                (CartProduct product) => <String, int>{
+                  'id': product.id,
+                  'quantity': product.quantity,
+                },
+              )
+              .toList(growable: false),
+        }),
+      ),
+    );
   }
 
   Future<Map<String, dynamic>> _send(

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../models/product.dart';
+import '../providers/cart_provider.dart';
 import '../services/product_service.dart';
+import '../utils/currency_formatter.dart';
 import 'product_details_screen.dart';
 
 class ProductScreen extends StatefulWidget {
@@ -39,7 +42,7 @@ class _ProductScreenState extends State<ProductScreen> {
       top: false,
       child: Column(
         children: <Widget>[
-          // Enhancement 1: Search filters products by title, brand, and category.
+          // Lab Activity 2 - Enhancement 1: Search filters products by title, brand, and category.
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: SearchBar(
@@ -79,10 +82,11 @@ class _ProductScreenState extends State<ProductScreen> {
                       );
                     }
 
-                    final List<Product> products =
-                        (snapshot.data ?? const <Product>[])
-                            .where(_matchesSearch)
-                            .toList(growable: false);
+                    final List<Product> allProducts =
+                        snapshot.data ?? const <Product>[];
+                    final List<Product> products = allProducts
+                        .where(_matchesSearch)
+                        .toList(growable: false);
                     if (products.isEmpty) {
                       return _EmptyState(hasSearch: _query.isNotEmpty);
                     }
@@ -104,11 +108,16 @@ class _ProductScreenState extends State<ProductScreen> {
                           final Product product = products[index];
                           return _ProductCard(
                             product: product,
-                            // Enhancement 2: Tapping a card opens a complete details page.
+                            // Lab Activity 2 - Enhancement 2: Tapping a card opens a complete details page.
                             onTap: () => Navigator.of(context).push(
                               MaterialPageRoute<void>(
                                 builder: (_) =>
-                                    ProductDetailsScreen(product: product),
+                                    ChangeNotifierProvider<CartProvider>.value(
+                                      value: context.read<CartProvider>(),
+                                      child: ProductDetailsScreen(
+                                        product: product,
+                                      ),
+                                    ),
                               ),
                             ),
                           );
@@ -179,7 +188,7 @@ class _ProductCard extends StatelessWidget {
                     children: <Widget>[
                       Expanded(
                         child: Text(
-                          '\$${product.price.toStringAsFixed(2)}',
+                          CurrencyFormatter.peso(product.price),
                           style: TextStyle(
                             color: colors.primary,
                             fontSize: 16,

@@ -60,7 +60,8 @@ class ProductService {
   }
 
   Future<List<Product>> getAllProducts() async {
-    final Uri endpoint = Uri.parse('$apiHost/products');
+    // Load the bounded full catalog page so every cart item is searchable.
+    final Uri endpoint = Uri.parse('$apiHost/products?limit=70&skip=110');
 
     try {
       final http.Response response = await _client
