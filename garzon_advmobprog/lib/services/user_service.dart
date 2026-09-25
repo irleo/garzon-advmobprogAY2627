@@ -6,16 +6,72 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
 import '../models/user.dart';
+import '../models/signup_data.dart';
+import 'firebase_account_service.dart';
+import 'auth_exception.dart';
+
+export 'auth_exception.dart';
 
 class UserService {
-  UserService({http.Client? client}) : _client = client ?? http.Client();
+  UserService({http.Client? client, this.firebase})
+    : _client = client ?? http.Client();
 
   static const String sessionKey = 'lab4.userSession';
   final http.Client _client;
+  final FirebaseAccountGateway? firebase;
+
+  FirebaseAccountGateway get _firebaseAccount =>
+      firebase ??
+      (throw const UserServiceException('Firebase is not configured.'));
+
+  Future<User> signIn(
+    String identifier,
+    String password, {
+    required LoginType loginType,
+  }) async {
+    try {
+      if (loginType == LoginType.dummyJson) {
+        return await loginUser(identifier, password);
+      }
+      await _clearSavedSession();
+      return await _firebaseAccount.signIn(identifier, password);
+    } on Object {
+      rethrow;
+    }
+  }
+
+  Future<User> createAccount(SignUpData data) async {
+    try {
+      await _clearSavedSession();
+      return await _firebaseAccount.createAccount(data);
+    } on Object {
+      rethrow;
+    }
+  }
+
+  Future<User?> getUserData() => restoreSession();
+  Future<User> updateUsername(String username) =>
+      _firebaseAccount.updateUsername(username);
+  Future<void> resetPasswordFromCurrentPassword(
+    String currentPassword,
+    String newPassword,
+  ) => _firebaseAccount.changePassword(currentPassword, newPassword);
+
+  Future<void> deleteAccount(String currentPassword) async {
+    try {
+      await _firebaseAccount.deleteAccount(currentPassword);
+      await logout();
+    } on Object {
+      rethrow;
+    }
+  }
+
+  Future<void> signOut() => logout();
 
   // Lab Activity 4 - Enhancement 2: Authenticate and persist the typed user.
   Future<User> loginUser(String username, String password) async {
     try {
+      if (firebase?.hasSession ?? false) await _firebaseAccount.signOut();
       final Map<String, dynamic> data = await _request(
         () => _client.post(
           Uri.parse('$apiHost/auth/login'),
@@ -42,6 +98,9 @@ class UserService {
 
   Future<void> saveUserData(User user) async {
     try {
+      if (user.loginType != LoginType.dummyJson) {
+        throw StateError('Firebase sessions belong to the Firebase SDK.');
+      }
       final SharedPreferences preferences =
           await SharedPreferences.getInstance();
       // The lab uses preferences for its demo session; never save the password.
@@ -85,6 +144,14 @@ class UserService {
 
   // Lab Activity 4 - Enhancement 1: Restore and validate persistent authentication.
   Future<User?> restoreSession() async {
+    if (firebase?.hasSession ?? false) {
+      try {
+        await _clearSavedSession();
+        return await _firebaseAccount.restoreSession();
+      } on Object {
+        rethrow;
+      }
+    }
     final User? saved = await getUser();
     if (saved == null) return null;
     try {
@@ -147,6 +214,15 @@ class UserService {
 
   Future<void> logout() async {
     try {
+      if (firebase?.hasSession ?? false) await _firebaseAccount.signOut();
+      await _clearSavedSession();
+    } on Object {
+      throw const UserServiceException('Unable to sign out. Please try again.');
+    }
+  }
+
+  Future<void> _clearSavedSession() async {
+    try {
       final SharedPreferences preferences =
           await SharedPreferences.getInstance();
       if (!await preferences.remove(sessionKey)) {
@@ -191,15 +267,4 @@ class UserService {
   }
 
   void close() => _client.close();
-}
-
-class UserServiceException implements Exception {
-  const UserServiceException(this.message, {this.statusCode});
-
-  final String message;
-  final int? statusCode;
-  bool get isUnauthorized => statusCode == 401 || statusCode == 403;
-
-  @override
-  String toString() => message;
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "113227496654",
+    "project_id": "advmobprogay2627",
+    "storage_bucket": "advmobprogay2627.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:113227496654:android:a9a8ec8788bad8a878e49f",
+        "android_client_info": {
+          "package_name": "com.example.garzon_advmobprog"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7Hi2ZzoqS3PV2IyvzuI5uWNubz5BqUO4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

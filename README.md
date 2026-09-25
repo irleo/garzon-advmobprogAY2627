@@ -1,58 +1,67 @@
 # Advanced Mobile Programming Activity
 
-## Lab Activity 4: Discussion
+## Lab Activity 5: Discussion
 
-Lab Activity 4 extends the existing model-service-provider-screen structure with
-persistent authentication. `User` in `lib/models/user.dart` converts the login
-response into typed fields: ID, username, name, email, gender, avatar, and session
-tokens. `UserService` owns requests to `POST /auth/login`, `GET /auth/me`, and
-`POST /auth/refresh`, along with saving and reading the user through
-`shared_preferences`. The password is sent only to the login endpoint and is never
-saved. The service wraps network timeouts, invalid responses, and storage failures
-in errors that the screens can display.
+The sign-in screen supports two login types. DummyJSON sends a username and
+password to `/auth/login`, validates a saved demo session with `/auth/me`, and
+refreshes expired tokens through `/auth/refresh`. Its users and cart writes are
+demonstration data, so Firebase account changes are not offered for DummyJSON
+accounts. The earlier SharedPreferences token storage remains limited to this
+demo path.
 
-Enhancement 1 is implemented in `SplashScreen`. The NU splash checks the saved
-session and validates it with `/auth/me`. A valid session opens the home screen;
-no session opens sign-in. An expired access token is refreshed when possible.
-Rejected sessions are removed, while connection failures show a retry action
-without erasing the saved session.
+Firebase sign-in uses email and password through the Authentication SDK. Signup
+creates a Firebase identity, then saves first name, last name, age, contact number,
+and username in the signed-in user's `users/{uid}` Firestore document. The UID is
+kept as a string and is never converted into a DummyJSON numeric ID. Email comes
+from Firebase Auth; passwords and Firebase tokens are not stored in Firestore or
+preferences. Firebase manages session persistence and token refresh. A restored
+session reloads the Firebase user and profile before opening the home screen.
 
-Enhancement 2 is implemented in `SignInScreen`. The custom form validates username
-and password, supports password visibility, disables duplicate submissions, and
-shows loading and error states. A successful login is saved by `UserService`
-before replacing the navigation stack with the home screen. Both authentication
-screens use the supplied NU image.
+`UserService` provides the common interface used by screens: `signIn`,
+`createAccount`, `getUserData`, `signOut`, `updateUsername`, `deleteAccount`, and
+`resetPasswordFromCurrentPassword`. It delegates Firebase operations to
+`FirebaseAccountService` and preserves the existing DummyJSON implementation.
+This keeps provider selection, persistence, and error handling out of the UI.
+Switching providers clears the previous provider's session.
 
-Enhancement 3 connects the saved `User` to `ProfileScreen` and `CartProvider`.
-The profile displays the user's avatar, full name, username, email, gender, and ID.
-Logging out removes only the application's session preference and clears the
-authenticated navigation stack. The home screen owns a separate cart provider
-for that user, which is disposed on logout; pending requests cannot notify a
-disposed provider or overwrite another account's cart.
+The signup form validates every required field and password confirmation. Input
+formatters reject invalid typing and pasted values. Names accept Unicode letters,
+spaces, apostrophes, and hyphens; usernames accept ASCII letters, numbers, and
+underscores; age accepts whole digits; phone numbers accept digits and one leading
+plus. Email syntax is checked separately, and password symbols remain allowed.
+Service validation repeats these checks before writes. Profile
+shows details appropriate to the login type. Firebase users can change their
+display username, change their password after reauthentication, or permanently
+delete their account after entering their current password and typing DELETE.
+Logout in Profile or Settings clears the authentication stack and disposes the
+session's cart. Firebase carts are session-local; DummyJSON cart behavior remains
+unchanged. Usernames are not unique and are not used for Firebase sign-in.
 
-The cart now loads `GET /carts/user/{user.id}?limit=1` using the authenticated user's
-ID, replacing the previous fixed `/carts/1` request. The first returned cart is the
-active cart for this single-cart interface, and its owner is checked before it is
-displayed. A user without a server cart starts with an empty local cart. Adding
-products sends the saved user ID to `/carts/add`; updates to an existing cart use
-the returned cart ID. Newly created carts remain local after the simulated POST,
-because DummyJSON does not persist them for later PATCH requests. Refresh reloads
-the server's original data, so simulated changes last only for the current session.
-The checkout summary stays pinned above bottom navigation while items scroll.
+Auth and Firestore do not share a transaction. If signup creates an account but
+cannot save its profile, the same form can retry without creating a second
+identity. A missing profile can also be completed after sign-in. Deletion removes
+the profile while the user can still authorize it, then deletes the identity. If
+identity deletion fails, the service attempts to restore the profile and reports
+an actionable error if recovery also fails.
 
-The lab follows the handout's SharedPreferences session example with DummyJSON
-demo accounts. SharedPreferences is not encrypted credential storage; a production
-app should use platform-protected storage for tokens. Profile UI never renders
-tokens, and logging out preserves unrelated preferences.
+Firebase adds real account creation, SDK-managed sessions, reauthentication for
+sensitive changes, and owner-based database access. The included Firestore rules
+allow each user to access only their own profile, reject collection listing, and
+validate allowed fields and timestamps. The rules must be published to the
+`advmobprogay2627` project before profile operations work; creating a database by
+itself does not publish these rules.
 
-### Running the activity
+### Run and verify 
 
-From `garzon_advmobprog`, run `flutter pub get`, then `flutter run`.
-Use the public DummyJSON sample account `emilys` / `emilyspass` to sign in.
-Restart the app to check persistent sign-in, open Profile to inspect the saved
-user, then open Cart to see that user's products. Log out and sign in with another
-DummyJSON account to check user-specific cart loading.
+From `garzon_advmobprog`, publish the reviewed rules using
+`firebase deploy --only firestore:rules --project=advmobprogay2627`, then run
+`flutter run` with an Android device connected. Only Android is configured.
+Choose Firebase, create an account, restart the app to check restoration, update
+the username, change the password, and verify that the new password works after
+logout. Use a disposable account to verify deletion. Choose DummyJSON to verify
+the existing `emilys` / `emilyspass` demo login and user-specific carts.
 
-API references: [DummyJSON authentication](https://dummyjson.com/docs/auth),
-[DummyJSON carts](https://dummyjson.com/docs/carts), and
-[SharedPreferences](https://pub.dev/packages/shared_preferences).
+References: [Firebase password authentication](https://firebase.google.com/docs/auth/flutter/password-auth),
+[Firebase user management](https://firebase.google.com/docs/auth/flutter/manage-users),
+and [Firestore access rules](https://firebase.google.com/docs/firestore/security/rules-conditions).
+

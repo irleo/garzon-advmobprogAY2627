@@ -5,6 +5,7 @@ import '../models/user.dart';
 import '../services/user_service.dart';
 import 'home_screen.dart';
 import 'signin_screen.dart';
+import '../widgets/logout_button.dart';
 
 // Lab Activity 4 - Enhancement 1: NU splash UI with persistent session routing.
 class SplashScreen extends StatefulWidget {
@@ -80,6 +81,8 @@ class _SplashScreenState extends State<SplashScreen> {
                     icon: const Icon(Icons.refresh_rounded),
                     label: const Text('Try again'),
                   ),
+                  const SizedBox(height: 12),
+                  const LogoutButton(),
                 ],
               ],
             ),

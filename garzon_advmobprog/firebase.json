@@ -1,0 +1,22 @@
+{
+  "firestore": { "rules": "firestore.rules" },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "advmobprogay2627",
+          "appId": "1:113227496654:android:a9a8ec8788bad8a878e49f",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "advmobprogay2627",
+          "configurations": {
+            "android": "1:113227496654:android:a9a8ec8788bad8a878e49f"
+          }
+        }
+      }
+    }
+  }
+}

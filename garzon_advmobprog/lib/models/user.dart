@@ -1,4 +1,6 @@
-// Lab Activity 4 - Enhancement 3: A typed model for the saved API user.
+enum LoginType { dummyJson, firebase }
+
+// Firebase UIDs remain distinct from DummyJSON's numeric IDs.
 class User {
   const User({
     required this.id,
@@ -10,9 +12,21 @@ class User {
     required this.image,
     required this.accessToken,
     required this.refreshToken,
+    this.loginType = LoginType.dummyJson,
+    this.firebaseUid,
+    this.age,
+    this.contactNo = '',
+    this.profileComplete = true,
   });
 
-  final int id;
+  final int? id;
+  final LoginType loginType;
+  final String? firebaseUid;
+  final int? age;
+  final String contactNo;
+  final bool profileComplete;
+
+  String get accountId => firebaseUid ?? id.toString();
   final String username;
   final String email;
   final String firstName;

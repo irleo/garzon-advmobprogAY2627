@@ -8,7 +8,8 @@ class CartProvider extends ChangeNotifier {
   CartProvider({required this.userId, CartService? cartService})
     : _cartService = cartService ?? CartService();
 
-  final int userId;
+  // Null means a Firebase account, whose cart stays inside its home session.
+  final int? userId;
 
   final CartService _cartService;
   final Set<int> _updatingProductIds = <int>{};
@@ -30,7 +31,19 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final Cart cart = await _cartService.getCartByUserId(userId);
+      final int? dummyJsonId = userId;
+      final Cart cart = dummyJsonId == null
+          ? (_cart ??
+                const Cart(
+                  id: 0,
+                  products: <CartProduct>[],
+                  total: 0,
+                  discountedTotal: 0,
+                  userId: 0,
+                  totalProducts: 0,
+                  totalQuantity: 0,
+                ))
+          : await _cartService.getCartByUserId(dummyJsonId);
       if (!_isDisposed) _cart = cart;
     } on Object catch (error) {
       _error = error;
@@ -72,25 +85,29 @@ class CartProvider extends ChangeNotifier {
     _setUpdating(product.id, true);
 
     try {
-      final Cart response = await _cartService.addToCart(
-        userId: currentCart.userId,
-        productId: product.id,
+      final Cart? response = userId == null
+          ? null
+          : await _cartService.addToCart(
+              userId: currentCart.userId,
+              productId: product.id,
+              quantity: 1,
+            );
+      final CartProduct fallback = CartProduct(
+        id: product.id,
+        title: product.title,
+        price: product.price,
         quantity: 1,
+        total: product.price,
+        discountPercentage: product.discountPercentage,
+        discountedTotal: product.price * (1 - product.discountPercentage / 100),
+        thumbnail: product.thumbnail,
       );
-      final CartProduct addedProduct = response.products.firstWhere(
-        (CartProduct item) => item.id == product.id,
-        orElse: () => CartProduct(
-          id: product.id,
-          title: product.title,
-          price: product.price,
-          quantity: 1,
-          total: product.price,
-          discountPercentage: product.discountPercentage,
-          discountedTotal:
-              product.price * (1 - (product.discountPercentage / 100)),
-          thumbnail: product.thumbnail,
-        ),
-      );
+      final CartProduct addedProduct =
+          response?.products.firstWhere(
+            (CartProduct item) => item.id == product.id,
+            orElse: () => fallback,
+          ) ??
+          fallback;
 
       final List<CartProduct> products = <CartProduct>[];
       bool found = false;

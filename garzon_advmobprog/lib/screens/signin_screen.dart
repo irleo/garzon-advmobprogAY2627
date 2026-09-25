@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/user.dart';
+import '../models/signup_data.dart';
 import '../services/user_service.dart';
+import '../utils/auth_input_formatters.dart';
 import 'home_screen.dart';
+import 'signup_screen.dart';
 
 // Lab Activity 4 - Enhancement 2: Custom sign-in UI using UserService.
 class SignInScreen extends StatefulWidget {
@@ -22,6 +25,7 @@ class _SignInScreenState extends State<SignInScreen> {
   bool _isLoading = false;
   bool _hidePassword = true;
   String? _error;
+  LoginType _loginType = LoginType.dummyJson;
 
   Future<void> _login() async {
     if (_isLoading || !(_formKey.currentState?.validate() ?? false)) return;
@@ -31,9 +35,10 @@ class _SignInScreenState extends State<SignInScreen> {
       _error = null;
     });
     try {
-      final User user = await context.read<UserService>().loginUser(
+      final User user = await context.read<UserService>().signIn(
         _username.text,
         _password.text,
+        loginType: _loginType,
       );
       if (!mounted) return;
       Navigator.of(context).pushNamedAndRemoveUntil(
@@ -91,17 +96,52 @@ class _SignInScreenState extends State<SignInScreen> {
                       style: TextStyle(color: colors.onSurfaceVariant),
                     ),
                     const SizedBox(height: 32),
+                    SegmentedButton<LoginType>(
+                      segments: const <ButtonSegment<LoginType>>[
+                        ButtonSegment(
+                          value: LoginType.dummyJson,
+                          label: Text('DummyJSON'),
+                        ),
+                        ButtonSegment(
+                          value: LoginType.firebase,
+                          label: Text('Firebase'),
+                        ),
+                      ],
+                      selected: <LoginType>{_loginType},
+                      onSelectionChanged: _isLoading
+                          ? null
+                          : (Set<LoginType> selection) {
+                              setState(() {
+                                _loginType = selection.single;
+                                _error = null;
+                                _username.clear();
+                                _password.clear();
+                                _formKey.currentState?.reset();
+                              });
+                            },
+                    ),
+                    const SizedBox(height: 20),
                     TextFormField(
                       controller: _username,
+                      inputFormatters: _loginType == LoginType.firebase
+                          ? AuthInputFormatters.email
+                          : AuthInputFormatters.username,
                       enabled: !_isLoading,
                       autocorrect: false,
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Username',
-                        prefixIcon: Icon(Icons.person_outline_rounded),
+                      keyboardType: _loginType == LoginType.firebase
+                          ? TextInputType.emailAddress
+                          : TextInputType.text,
+                      decoration: InputDecoration(
+                        labelText: _loginType == LoginType.firebase
+                            ? 'Email address'
+                            : 'Username',
+                        prefixIcon: const Icon(Icons.person_outline_rounded),
                       ),
                       validator: (String? value) =>
-                          value == null || value.trim().isEmpty
+                          _loginType == LoginType.firebase
+                          ? AuthValidation.email(value)
+                          : value == null || value.trim().isEmpty
                           ? 'Enter your username.'
                           : null,
                     ),
@@ -159,6 +199,16 @@ class _SignInScreenState extends State<SignInScreen> {
                           : const Text('Sign in'),
                     ),
                     const SizedBox(height: 24),
+                    TextButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () => Navigator.of(context).push<void>(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const SignUpScreen(),
+                              ),
+                            ),
+                      child: const Text('Create a Firebase account'),
+                    ),
                     Text(
                       'NU EXCHANGE',
                       textAlign: TextAlign.center,

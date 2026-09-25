@@ -1,12 +1,15 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
+import 'firebase_options.dart';
 import 'providers/theme_provider.dart';
 import 'models/user.dart';
 import 'services/user_service.dart';
+import 'services/firebase_account_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/signin_screen.dart';
@@ -14,6 +17,21 @@ import 'screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } on Object catch (error, stackTrace) {
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stackTrace,
+        library: 'Firebase initialization',
+      ),
+    );
+    rethrow;
+  }
 
   try {
     await SystemChrome.setPreferredOrientations(<DeviceOrientation>[
@@ -42,7 +60,7 @@ class GarzonAdvMobProg extends StatelessWidget {
       providers: [
         ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
         Provider<UserService>(
-          create: (_) => UserService(),
+          create: (_) => UserService(firebase: FirebaseAccountService()),
           dispose: (_, UserService service) => service.close(),
         ),
       ],

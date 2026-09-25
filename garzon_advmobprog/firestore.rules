@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      function owner() {
+        return request.auth != null && request.auth.uid == uid;
+      }
+      function validProfile() {
+        let data = request.resource.data;
+        return data.keys().hasAll(['firstName', 'lastName', 'age', 'contactNo',
+          'username', 'createdAt', 'updatedAt']) &&
+          data.keys().hasOnly(['firstName', 'lastName', 'age', 'contactNo',
+          'username', 'createdAt', 'updatedAt']) &&
+          data.firstName is string && data.firstName.size() > 0 && data.firstName.size() <= 80 &&
+          data.firstName.matches("^[\\p{L}\\p{M}]+([ '-][\\p{L}\\p{M}]+)*$") &&
+          data.lastName is string && data.lastName.size() > 0 && data.lastName.size() <= 80 &&
+          data.lastName.matches("^[\\p{L}\\p{M}]+([ '-][\\p{L}\\p{M}]+)*$") &&
+          data.age is int && data.age >= 1 && data.age <= 120 &&
+          data.contactNo is string && data.contactNo.matches('^[+]?[0-9]{7,15}$') &&
+          data.username is string && data.username.matches('^[a-zA-Z0-9_]{3,30}$') &&
+          data.createdAt is timestamp && data.updatedAt == request.time;
+      }
+      allow get: if owner();
+      allow list: if false;
+      allow create: if owner() && validProfile() && request.resource.data.createdAt == request.time;
+      allow update: if owner() && validProfile() &&
+        request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if owner();
+    }
+  }
+}
