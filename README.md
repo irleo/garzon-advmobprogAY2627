@@ -33,9 +33,14 @@ Service validation repeats these checks before writes. Profile
 shows details appropriate to the login type. Firebase users can change their
 display username, change their password after reauthentication, or permanently
 delete their account after entering their current password and typing DELETE.
-Logout in Profile or Settings clears the authentication stack and disposes the
+Successful signup signs out the temporary registration session and returns to
+login with a success message; completing an existing profile keeps its session.
+Logout at the bottom of Settings clears the authentication stack and disposes the
 session's cart. Firebase carts are session-local; DummyJSON cart behavior remains
 unchanged. Usernames are not unique and are not used for Firebase sign-in.
+
+Logout, username updates, password changes, and account deletion show confirmation
+dialogs before proceeding. Signup password fields each have a show/hide eye icon.
 
 Auth and Firestore do not share a transaction. If signup creates an account but
 cannot save its profile, the same form can retry without creating a second
@@ -64,4 +69,3 @@ the existing `emilys` / `emilyspass` demo login and user-specific carts.
 References: [Firebase password authentication](https://firebase.google.com/docs/auth/flutter/password-auth),
 [Firebase user management](https://firebase.google.com/docs/auth/flutter/manage-users),
 and [Firestore access rules](https://firebase.google.com/docs/firestore/security/rules-conditions).
-

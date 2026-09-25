@@ -18,8 +18,6 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
-          const LogoutButton(),
-          const SizedBox(height: 16),
           // Enhancement 3: Theme controls live on a dedicated settings page.
           Card(
             child: SwitchListTile.adaptive(
@@ -38,6 +36,10 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: const SafeArea(
+        minimum: EdgeInsets.all(16),
+        child: LogoutButton(),
       ),
     );
   }

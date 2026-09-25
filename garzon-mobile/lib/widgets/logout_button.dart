@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../screens/signin_screen.dart';
 import '../services/user_service.dart';
+import 'confirm_action_dialog.dart';
 
 class LogoutButton extends StatefulWidget {
   const LogoutButton({super.key});
@@ -18,6 +19,13 @@ class _LogoutButtonState extends State<LogoutButton> {
     if (_busy) return;
     setState(() => _busy = true);
     try {
+      final bool confirmed = await confirmAction(
+        context,
+        title: 'Log out?',
+        message: 'You will need to sign in again to access your account.',
+        confirmLabel: 'Log out',
+      );
+      if (!mounted || !confirmed) return;
       await context.read<UserService>().signOut();
       if (!mounted) return;
       Navigator.of(

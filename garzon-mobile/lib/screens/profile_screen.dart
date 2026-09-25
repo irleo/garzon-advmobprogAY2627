@@ -18,7 +18,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _isSigningOut = false;
   late User _user = widget.user;
   bool _loading = false;
   String? _error;
@@ -67,25 +66,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _refresh();
     } on Object catch (error) {
       if (mounted) setState(() => _error = error.toString());
-    }
-  }
-
-  Future<void> _logout() async {
-    if (_isSigningOut) return;
-    setState(() => _isSigningOut = true);
-    try {
-      await context.read<UserService>().logout();
-      if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(SignInScreen.routeName, (_) => false);
-    } on Object catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
-    } finally {
-      if (mounted) setState(() => _isSigningOut = false);
     }
   }
 
@@ -200,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (user.loginType == LoginType.firebase) ...<Widget>[
           if (!user.profileComplete)
             FilledButton.tonal(
-              onPressed: _isSigningOut || _loading
+              onPressed: _loading
                   ? null
                   : () => Navigator.of(context).push<void>(
                       MaterialPageRoute<void>(
@@ -211,21 +191,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           if (user.profileComplete)
             OutlinedButton(
-              onPressed: _isSigningOut || _loading
+              onPressed: _loading
                   ? null
                   : () => _manage(AccountAction.username),
               child: const Text('Update username'),
             ),
           OutlinedButton(
-            onPressed: _isSigningOut || _loading
-                ? null
-                : () => _manage(AccountAction.password),
+            onPressed: _loading ? null : () => _manage(AccountAction.password),
             child: const Text('Change password'),
           ),
           TextButton(
-            onPressed: _isSigningOut || _loading
-                ? null
-                : () => _manage(AccountAction.delete),
+            onPressed: _loading ? null : () => _manage(AccountAction.delete),
             child: const Text('Delete account'),
           ),
           const SizedBox(height: 20),
@@ -237,16 +213,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               'to manage your username, password, and account deletion.',
             ),
           ),
-        FilledButton.icon(
-          onPressed: _isSigningOut ? null : _logout,
-          style: FilledButton.styleFrom(
-            backgroundColor: colors.error,
-            foregroundColor: colors.onError,
-            minimumSize: const Size.fromHeight(52),
-          ),
-          icon: const Icon(Icons.logout_rounded),
-          label: Text(_isSigningOut ? 'Signing out…' : 'Log out'),
-        ),
       ],
     );
   }

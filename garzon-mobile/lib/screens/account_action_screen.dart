@@ -5,6 +5,7 @@ import '../models/signup_data.dart';
 import '../services/user_service.dart';
 import '../utils/auth_input_formatters.dart';
 import 'signin_screen.dart';
+import '../widgets/confirm_action_dialog.dart';
 
 enum AccountAction { username, password, delete }
 
@@ -48,6 +49,19 @@ class _AccountActionScreenState extends State<AccountActionScreen> {
       _error = null;
     });
     try {
+      final bool confirmed = await confirmAction(
+        context,
+        title: '$_title?',
+        message: switch (widget.action) {
+          AccountAction.username => 'Save this username to your profile?',
+          AccountAction.password => 'Use the new password for future sign-ins?',
+          AccountAction.delete =>
+            'Permanently delete your account and profile? This cannot be undone.',
+        },
+        confirmLabel: _title,
+        destructive: widget.action == AccountAction.delete,
+      );
+      if (!mounted || !confirmed) return;
       final UserService service = context.read<UserService>();
       switch (widget.action) {
         case AccountAction.username:

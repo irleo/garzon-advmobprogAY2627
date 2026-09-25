@@ -29,8 +29,11 @@ project shared with another app.
 firebase deploy --only firestore:rules --project=advmobprogay2627
 ```
 
-Firebase account controls are in Profile; logout is available in Profile and
-Settings. If account creation succeeds but profile saving fails, retry the same
+Firebase account controls are in Profile; logout is at the bottom of Settings.
+Logout and account changes require confirmation. Successful signup ends the
+temporary Firebase session and returns to login with a success message and the
+email prefilled. Password fields have individual visibility icons.
+If account creation succeeds but profile saving fails, retry the same
 form, or sign in and choose Complete your profile. Passwords and Firebase tokens
 are never written to profile documents or SharedPreferences. Usernames are display
 labels, not unique login identifiers. Firebase carts are local to the current

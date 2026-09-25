@@ -6,6 +6,7 @@ import '../models/user.dart';
 import '../services/user_service.dart';
 import '../utils/auth_input_formatters.dart';
 import 'home_screen.dart';
+import 'signin_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({this.user, super.key});
@@ -32,7 +33,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           key: TextEditingController(),
       };
   bool _busy = false;
-  bool _hidden = true;
+  final Set<String> _visiblePasswords = <String>{};
   String? _error;
 
   @override
@@ -68,12 +69,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
           email: _text('email'),
           password: _text('password'),
         ),
+        completingProfile: widget.user != null,
       );
       if (!mounted) return;
       Navigator.of(context).pushNamedAndRemoveUntil(
-        HomeScreen.routeName,
+        widget.user == null ? SignInScreen.routeName : HomeScreen.routeName,
         (_) => false,
-        arguments: user,
+        arguments: widget.user == null
+            ? AccountCreatedNotice(user.email)
+            : user,
       );
     } on Object catch (error) {
       if (mounted) setState(() => _error = error.toString());
@@ -111,11 +115,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
         'email' => AuthInputFormatters.email,
         _ => AuthInputFormatters.password,
       },
-      obscureText: secret && _hidden,
+      obscureText: secret && !_visiblePasswords.contains(key),
       autocorrect: !secret && keyboard == TextInputType.text,
       enableSuggestions: !secret,
       textInputAction: TextInputAction.next,
-      decoration: InputDecoration(labelText: label),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: secret ? const Icon(Icons.lock_outline_rounded) : null,
+        suffixIcon: secret
+            ? IconButton(
+                tooltip: _visiblePasswords.contains(key)
+                    ? 'Hide password'
+                    : 'Show password',
+                onPressed: _busy
+                    ? null
+                    : () => setState(() {
+                        if (!_visiblePasswords.add(key)) {
+                          _visiblePasswords.remove(key);
+                        }
+                      }),
+                icon: Icon(
+                  _visiblePasswords.contains(key)
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                ),
+              )
+            : null,
+      ),
       validator: validator,
     ),
   );
@@ -186,14 +212,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                   ],
                 ),
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Show passwords'),
-                value: !_hidden,
-                onChanged: _busy
-                    ? null
-                    : (bool value) => setState(() => _hidden = !value),
               ),
               if (_error != null)
                 Padding(

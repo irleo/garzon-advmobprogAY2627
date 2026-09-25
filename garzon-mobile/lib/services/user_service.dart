@@ -40,10 +40,17 @@ class UserService {
     }
   }
 
-  Future<User> createAccount(SignUpData data) async {
+  Future<User> createAccount(
+    SignUpData data, {
+    bool completingProfile = false,
+  }) async {
     try {
       await _clearSavedSession();
-      return await _firebaseAccount.createAccount(data);
+      final User user = await _firebaseAccount.createAccount(data);
+      // Firebase signs in during registration to authorize profile creation.
+      // End that temporary session before reporting successful signup.
+      if (!completingProfile) await _firebaseAccount.signOut();
+      return user;
     } on Object {
       rethrow;
     }

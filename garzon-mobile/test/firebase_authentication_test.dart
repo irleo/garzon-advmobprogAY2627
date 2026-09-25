@@ -200,6 +200,27 @@ void main() {
     expect(account.events, contains('reauthenticate'));
   });
 
+  test('successful signup ends the temporary Firebase session', () async {
+    authentication.active = false;
+    final UserService service = UserService(firebase: backend);
+    addTearDown(service.close);
+    final User user = await service.createAccount(_signup);
+    expect(user.email, _signup.email);
+    expect(document.value?['username'], _signup.username);
+    expect(authentication.active, isFalse);
+    expect(await service.restoreSession(), isNull);
+  });
+
+  test(
+    'completing an existing profile preserves the signed-in session',
+    () async {
+      final UserService service = UserService(firebase: backend);
+      addTearDown(service.close);
+      await service.createAccount(_signup, completingProfile: true);
+      expect(authentication.active, isTrue);
+    },
+  );
+
   test(
     'profile save retry does not create a second Firebase identity',
     () async {

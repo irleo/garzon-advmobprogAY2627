@@ -8,6 +8,11 @@ import '../utils/auth_input_formatters.dart';
 import 'home_screen.dart';
 import 'signup_screen.dart';
 
+class AccountCreatedNotice {
+  const AccountCreatedNotice(this.email);
+  final String email;
+}
+
 // Lab Activity 4 - Enhancement 2: Custom sign-in UI using UserService.
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -26,6 +31,21 @@ class _SignInScreenState extends State<SignInScreen> {
   bool _hidePassword = true;
   String? _error;
   LoginType _loginType = LoginType.dummyJson;
+  bool _readNotice = false;
+  bool _accountCreated = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_readNotice) return;
+    _readNotice = true;
+    final Object? notice = ModalRoute.of(context)?.settings.arguments;
+    if (notice is AccountCreatedNotice) {
+      _accountCreated = true;
+      _loginType = LoginType.firebase;
+      _username.text = notice.email;
+    }
+  }
 
   Future<void> _login() async {
     if (_isLoading || !(_formKey.currentState?.validate() ?? false)) return;
@@ -75,6 +95,21 @@ class _SignInScreenState extends State<SignInScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
+                    if (_accountCreated) ...<Widget>[
+                      Semantics(
+                        liveRegion: true,
+                        child: Card(
+                          color: colors.primaryContainer,
+                          child: const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Text(
+                              'Account successfully created. Please sign in to continue.',
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     Center(
                       child: Image.asset(
                         'assets/images/nuicon.png',
