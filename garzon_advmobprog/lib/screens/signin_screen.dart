@@ -72,7 +72,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   children: <Widget>[
                     Center(
                       child: Image.asset(
-                        'assets/images/nuicon.jpeg',
+                        'assets/images/nuicon.png',
                         width: 88,
                         height: 88,
                       ),

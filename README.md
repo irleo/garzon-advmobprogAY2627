@@ -1,29 +1,5 @@
 # Advanced Mobile Programming Activity
 
-## Lab Activity 3: Discussion
-
-The cart feature follows the project's model-service-screen design pattern. `Cart` and
-`CartProduct` convert DummyJSON responses into typed Dart objects. `CartService` owns
-the HTTP work for retrieving cart 1 and posting product values to the add cart
-endpoint. `CartProvider` keeps the cart synchronized across the main, detail, and cart
-screens. `CartScreen` renders the products and totals and handles loading, empty, and
-error states.
-
-When a cart item is tapped, `CartScreen` uses `ProductService.getProductById` with the
-cart product's ID. The returned `Product` is passed to the existing
-`ProductDetailsScreen`, so both the product list and cart reuse the same details widget.
-
-The updated structure separates API response models in `lib/models`, remote requests
-in `lib/services`, shared state in `lib/providers`, reusable UI in `lib/widgets`, and
-pages in `lib/screens`. This keeps JSON parsing and HTTP error handling outside the UI
-while allowing screens to focus on rendering and navigation.
-
-The application loads one cart through `GET /carts/1`. Adding a product uses
-`POST /carts/add` with a `userId` and a `products` array containing the product `id`
-and `quantity`. Quantity changes send the current product list to `PATCH /carts/1`.
-Because DummyJSON simulates writes without permanently saving them, `CartProvider`
-retains the returned changes for the current application session.
-
 ## Lab Activity 4: Discussion
 
 Lab Activity 4 extends the existing model-service-provider-screen structure with

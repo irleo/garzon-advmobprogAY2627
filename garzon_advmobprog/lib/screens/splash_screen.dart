@@ -51,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 Image.asset(
-                  'assets/images/nuicon.jpeg',
+                  'assets/images/nuicon.png',
                   width: 128,
                   height: 128,
                 ),
