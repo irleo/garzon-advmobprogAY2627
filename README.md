@@ -1,71 +1,100 @@
-# Advanced Mobile Programming Activity
+# NU Exchange
 
-## Lab Activity 5: Discussion
+NU Exchange is a Flutter mobile application for the NU community to browse
+products, manage a cart, personalize a profile, and chat with other members.
+It is developed as part of Advanced Mobile Programming coursework.
 
-The sign-in screen supports two login types. DummyJSON sends a username and
-password to `/auth/login`, validates a saved demo session with `/auth/me`, and
-refreshes expired tokens through `/auth/refresh`. Its users and cart writes are
-demonstration data, so Firebase account changes are not offered for DummyJSON
-accounts. The earlier SharedPreferences token storage remains limited to this
-demo path.
+## Features
 
-Firebase sign-in uses email and password through the Authentication SDK. Signup
-creates a Firebase identity, then saves first name, last name, age, contact number,
-and username in the signed-in user's `users/{uid}` Firestore document. The UID is
-kept as a string and is never converted into a DummyJSON numeric ID. Email comes
-from Firebase Auth; passwords and Firebase tokens are not stored in Firestore or
-preferences. Firebase manages session persistence and token refresh. A restored
-session reloads the Firebase user and profile before opening the home screen.
+- **Shop:** Browse product listings, search by title, brand, or category, and view
+  product details.
+- **Cart:** Manage the current user's cart from the app bar.
+- **Authentication:** Use Firebase email/password accounts or DummyJSON demo
+  accounts, with session restoration and logout.
+- **Chat:** Search members by name or email, exchange real-time messages, and see
+  recent-message previews, timestamps, unread counts, and read receipts.
+- **Profile:** View account details and choose preset avatars or gallery photos.
+  Local avatars persist per account on the device; Firebase users can optionally
+  sync a photo through Firebase Storage.
+- **Settings:** Switch between light and dark themes, update a Firebase username,
+  change a password, or delete an account with verification and confirmation.
 
-`UserService` provides the common interface used by screens: `signIn`,
-`createAccount`, `getUserData`, `signOut`, `updateUsername`, `deleteAccount`, and
-`resetPasswordFromCurrentPassword`. It delegates Firebase operations to
-`FirebaseAccountService` and preserves the existing DummyJSON implementation.
-This keeps provider selection, persistence, and error handling out of the UI.
-Switching providers clears the previous provider's session.
+The interface uses a shared cream-and-burgundy theme. Notification and email-offer
+switches are preview controls, and NU email linking is a placeholder.
 
-The signup form validates every required field and password confirmation. Input
-formatters reject invalid typing and pasted values. Names accept Unicode letters,
-spaces, apostrophes, and hyphens; usernames accept ASCII letters, numbers, and
-underscores; age accepts whole digits; phone numbers accept digits and one leading
-plus. Email syntax is checked separately, and password symbols remain allowed.
-Service validation repeats these checks before writes. Profile
-shows details appropriate to the login type. Firebase users can change their
-display username, change their password after reauthentication, or permanently
-delete their account after entering their current password and typing DELETE.
-Successful signup signs out the temporary registration session and returns to
-login with a success message; completing an existing profile keeps its session.
-Logout at the bottom of Settings clears the authentication stack and disposes the
-session's cart. Firebase carts are session-local; DummyJSON cart behavior remains
-unchanged. Usernames are not unique and are not used for Firebase sign-in.
+## Technology
 
-Logout, username updates, password changes, and account deletion show confirmation
-dialogs before proceeding. Signup password fields each have a show/hide eye icon.
+| Component | Technology |
+| --- | --- |
+| Mobile application | Flutter and Dart |
+| State management | Provider |
+| Authentication | Firebase Authentication; DummyJSON for demo accounts |
+| Profiles and messaging | Cloud Firestore |
+| Optional cloud photos | Firebase Storage |
+| Local preferences and avatars | SharedPreferences |
+| Product data | DummyJSON REST API |
+| Gallery selection | Image Picker |
 
-Auth and Firestore do not share a transaction. If signup creates an account but
-cannot save its profile, the same form can retry without creating a second
-identity. A missing profile can also be completed after sign-in. Deletion removes
-the profile while the user can still authorize it, then deletes the identity. If
-identity deletion fails, the service attempts to restore the profile and reports
-an actionable error if recovery also fails.
+## Project structure
 
-Firebase adds real account creation, SDK-managed sessions, reauthentication for
-sensitive changes, and owner-based database access. The included Firestore rules
-allow each user to access only their own profile, reject collection listing, and
-validate allowed fields and timestamps. The rules must be published to the
-`advmobprogay2627` project before profile operations work; creating a database by
-itself does not publish these rules.
+```text
+garzon-mobile/
+  lib/
+    models/       Typed application data
+    providers/    Theme and cart state
+    screens/      Application screens
+    services/     Authentication, data access, and avatar storage
+    utils/        Validation helpers and formatting
+    widgets/      Reusable interface components
+  assets/         App assets and API configuration
+  test/           Automated tests
+  firestore.rules Firestore access rules
+  storage.rules   Profile-photo storage rules
+  README.md       Lab Activity 6 implementation and verification guide
+```
 
-### Run and verify 
+## Getting started
 
-From `garzon_advmobprog`, publish the reviewed rules using
-`firebase deploy --only firestore:rules --project=advmobprogay2627`, then run
-`flutter run` with an Android device connected. Only Android is configured.
-Choose Firebase, create an account, restart the app to check restoration, update
-the username, change the password, and verify that the new password works after
-logout. Use a disposable account to verify deletion. Choose DummyJSON to verify
-the existing `emilys` / `emilyspass` demo login and user-specific carts.
+Install Flutter and connect an Android device or emulator, then run:
 
-References: [Firebase password authentication](https://firebase.google.com/docs/auth/flutter/password-auth),
-[Firebase user management](https://firebase.google.com/docs/auth/flutter/manage-users),
-and [Firestore access rules](https://firebase.google.com/docs/firestore/security/rules-conditions).
+```shell
+cd garzon-mobile
+flutter pub get
+flutter run
+```
+
+The API host is configured in `garzon-mobile/assets/.env` and defaults to
+DummyJSON. The Android app is configured for Firebase project
+`advmobprogay2627`. Firebase email/password authentication and Firestore must be
+available, and the included Firestore rules must be deployed for account and chat
+features. Cloud photo uploads additionally require Firebase Storage and its
+included rules; local avatars do not.
+
+Only Android currently has Firebase configuration. Configure additional platforms
+before running their Firebase features.
+
+## Account and data behavior
+
+Firebase manages its own authentication sessions. Passwords and Firebase tokens
+are not written to Firestore or SharedPreferences. Private profiles are readable
+only by their owners, while the member directory exposes names and emails to
+signed-in members. Conversations are restricted to their two participants.
+
+Firebase members need a completed profile to appear in Chat. Existing accounts
+join the directory when they sign in with this version. DummyJSON accounts provide
+demo shopping access and do not support Firebase chat or account management.
+Firebase carts last for the current home session; local avatars remain on the
+device across sessions.
+
+## Development
+
+Run static analysis from the Flutter app directory:
+
+```shell
+flutter analyze
+```
+
+Device checks are needed to verify authentication, two-account messaging, gallery
+selection, and optional cloud uploads. Static analysis alone does not verify live
+Firebase behavior.
+
