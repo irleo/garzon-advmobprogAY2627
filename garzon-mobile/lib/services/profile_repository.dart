@@ -8,10 +8,29 @@ abstract interface class ProfileRepository {
   Future<void> restore(String uid, Map<String, dynamic> profile);
 }
 
-class FirestoreProfileRepository implements ProfileRepository {
+abstract interface class ChatProfilePublisher {
+  Future<void> publishChatProfile(String uid, String name, String email);
+}
+
+class FirestoreProfileRepository
+    implements ProfileRepository, ChatProfilePublisher {
   FirestoreProfileRepository({FirebaseFirestore? database})
     : _database = database ?? FirebaseFirestore.instance;
   final FirebaseFirestore _database;
+
+  @override
+  Future<void> publishChatProfile(String uid, String name, String email) async {
+    try {
+      final DocumentReference<Map<String, dynamic>> document = _database
+          .collection('chatUsers')
+          .doc(uid);
+      final Map<String, dynamic>? existing = (await document.get()).data();
+      if (existing?['name'] == name && existing?['email'] == email) return;
+      await document.set(<String, Object>{'name': name, 'email': email});
+    } on FirebaseException {
+      rethrow;
+    }
+  }
 
   DocumentReference<Map<String, dynamic>> _document(String uid) =>
       _database.collection('users').doc(uid);
@@ -49,7 +68,16 @@ class FirestoreProfileRepository implements ProfileRepository {
       });
 
   @override
-  Future<void> delete(String uid) => _document(uid).delete();
+  Future<void> delete(String uid) async {
+    try {
+      final WriteBatch batch = _database.batch();
+      batch.delete(_document(uid));
+      batch.delete(_database.collection('chatUsers').doc(uid));
+      await batch.commit();
+    } on FirebaseException {
+      rethrow;
+    }
+  }
 
   @override
   Future<void> restore(String uid, Map<String, dynamic> profile) =>

@@ -12,6 +12,7 @@ class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   static const String routeName = '/';
+  static const Duration minimumDisplayDuration = Duration(seconds: 2);
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -29,7 +30,13 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkAuthentication() async {
     setState(() => _error = null);
     try {
-      final User? user = await context.read<UserService>().restoreSession();
+      // Check the session during the splash delay instead of adding the delay
+      // after a potentially slow authentication request.
+      final List<User?> results = await Future.wait<User?>(<Future<User?>>[
+        context.read<UserService>().restoreSession(),
+        Future<User?>.delayed(SplashScreen.minimumDisplayDuration, () => null),
+      ]);
+      final User? user = results.first;
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed(
         user == null ? SignInScreen.routeName : HomeScreen.routeName,

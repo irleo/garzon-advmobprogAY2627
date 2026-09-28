@@ -215,6 +215,7 @@ void main() {
         ),
       ),
     );
+    await tester.pump(SplashScreen.minimumDisplayDuration);
     await tester.pumpAndSettle();
     expect(find.byType(SignInScreen), findsOneWidget);
     expect(tester.takeException(), isNull);

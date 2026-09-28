@@ -116,6 +116,13 @@ class FirebaseAccountService implements FirebaseAccountGateway {
         AuthValidation.username(text('username')) == null &&
         AuthValidation.contact(text('contactNo')) == null &&
         AuthValidation.age(age?.toString()) == null;
+    if (complete && _profiles is ChatProfilePublisher) {
+      await (_profiles as ChatProfilePublisher).publishChatProfile(
+        account.uid,
+        '${text('firstName')} ${text('lastName')}'.trim(),
+        account.email ?? '',
+      );
+    }
     return User(
       id: null,
       loginType: LoginType.firebase,
